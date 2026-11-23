@@ -33,7 +33,7 @@
         <label>Phone <span class="opt">(optional)</span> <input name="phone" type="tel" autocomplete="tel" maxlength="30"></label>
       </div>
 
-      <label>How many in your party, including you?
+      <label>Total people in your party, including you and any children?
         <div class="stepper">
           <button type="button" data-step="-1" aria-label="Fewer">−</button>
           <input name="headcount" type="number" min="1" max="30" value="1" inputmode="numeric" required>
@@ -50,6 +50,19 @@
         </div>
       </fieldset>
       <label>Tell us the dish <input name="dish" required maxlength="200" placeholder="e.g. Mac &amp; cheese, banana pudding"></label>
+
+      <fieldset class="daycare">
+        <legend>Daycare is available!</legend>
+        <p class="note">Volunteers will be watching the children during the party. Daycare is donation-based, and donations go to the volunteers who watch your children.</p>
+        <label>How many children will you bring to daycare?
+          <div class="stepper">
+            <button type="button" data-step="-1" data-for="kids_count" aria-label="Fewer children">−</button>
+            <input name="kids_count" type="number" min="0" max="15" value="0" inputmode="numeric">
+            <button type="button" data-step="1" data-for="kids_count" aria-label="More children">+</button>
+          </div>
+        </label>
+        <label id="ages-wrap" hidden>Their ages <input name="kids_ages" maxlength="200" placeholder="e.g. 3, 6, 9"></label>
+      </fieldset>
 
       <label>Anything else we should know? <span class="opt">(optional)</span>
         <textarea name="notes" rows="2" maxlength="500"></textarea></label>

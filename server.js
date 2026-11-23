@@ -26,19 +26,23 @@ if (process.env.DATABASE_URL) {
         dish_type TEXT NOT NULL,
         dish TEXT NOT NULL,
         notes TEXT,
+        kids_count INTEGER NOT NULL DEFAULT 0,
+        kids_ages TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )`);
+      await pool.query('ALTER TABLE rsvps ADD COLUMN IF NOT EXISTS kids_count INTEGER NOT NULL DEFAULT 0');
+      await pool.query('ALTER TABLE rsvps ADD COLUMN IF NOT EXISTS kids_ages TEXT');
     },
     async upsert(r) {
       const { rows } = await pool.query(
-        `INSERT INTO rsvps (name, email, phone, headcount, dish_type, dish, notes)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)
+        `INSERT INTO rsvps (name, email, phone, headcount, dish_type, dish, notes, kids_count, kids_ages)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
          ON CONFLICT (email) DO UPDATE SET name=EXCLUDED.name, phone=EXCLUDED.phone,
            headcount=EXCLUDED.headcount, dish_type=EXCLUDED.dish_type, dish=EXCLUDED.dish,
-           notes=EXCLUDED.notes, updated_at=now()
+           notes=EXCLUDED.notes, kids_count=EXCLUDED.kids_count, kids_ages=EXCLUDED.kids_ages, updated_at=now()
          RETURNING (xmax <> 0) AS updated`,
-        [r.name, r.email, r.phone, r.headcount, r.dish_type, r.dish, r.notes]
+        [r.name, r.email, r.phone, r.headcount, r.dish_type, r.dish, r.notes, r.kids_count, r.kids_ages]
       );
       return { updated: rows[0].updated };
     },
@@ -98,13 +102,19 @@ app.post('/api/rsvp', async (req, res) => {
     dish_type: clean(b.dish_type, 20),
     dish: clean(b.dish, 200),
     notes: clean(b.notes, 500) || null,
+    kids_count: b.kids_count === undefined || b.kids_count === '' ? 0 : parseInt(b.kids_count, 10),
+    kids_ages: clean(b.kids_ages, 200) || null,
   };
+  if (r.kids_count === 0) r.kids_ages = null;
   const errors = [];
   if (!r.name) errors.push('Please enter your name.');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) errors.push('Please enter a valid email address.');
   if (!Number.isInteger(r.headcount) || r.headcount < 1 || r.headcount > 30) errors.push('Headcount must be between 1 and 30.');
   if (!['Side dish', 'Dessert', 'Both'].includes(r.dish_type)) errors.push('Please choose side dish, dessert, or both.');
   if (!r.dish) errors.push('Please tell us what you are bringing.');
+  if (!Number.isInteger(r.kids_count) || r.kids_count < 0 || r.kids_count > 15) errors.push('Number of children for daycare must be between 0 and 15.');
+  else if (r.kids_count > r.headcount) errors.push('Children for daycare cannot be more than your total party size.');
+  else if (r.kids_count > 0 && !r.kids_ages) errors.push("Please list the ages of the children you're bringing to daycare.");
   if (errors.length) return res.status(400).json({ ok: false, errors });
   try {
     const { updated } = await store.upsert(r);
@@ -132,6 +142,7 @@ const fmt = (d) => new Date(d).toLocaleString('en-US', { timeZone: 'America/Chic
 app.get('/admin', requireAdmin, async (req, res) => {
   const rows = await store.all();
   const total = rows.reduce((s, r) => s + Number(r.headcount), 0);
+  const kids = rows.reduce((s, r) => s + Number(r.kids_count || 0), 0);
   const count = (t) => rows.filter((r) => r.dish_type === t || r.dish_type === 'Both').length;
   res.send(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RSVPs · 80s Christmas Party</title><link rel="stylesheet" href="/style.css"></head>
@@ -140,28 +151,30 @@ app.get('/admin', requireAdmin, async (req, res) => {
 <div class="stats">
   <div class="stat"><span>${total}</span>Total headcount</div>
   <div class="stat"><span>${rows.length}</span>RSVPs</div>
+  <div class="stat"><span>${kids}</span>Children in daycare</div>
   <div class="stat"><span>${count('Side dish')}</span>Bringing sides</div>
   <div class="stat"><span>${count('Dessert')}</span>Bringing desserts</div>
 </div>
 <p><a class="btn small" href="/admin/export.csv">Download CSV</a></p>
 <div class="table-wrap"><table>
-<thead><tr><th>Name</th><th>Count</th><th>Bringing</th><th>Contact</th><th>Notes</th><th>Updated</th><th></th></tr></thead>
+<thead><tr><th>Name</th><th>Count</th><th>Bringing</th><th>Daycare</th><th>Contact</th><th>Notes</th><th>Updated</th><th></th></tr></thead>
 <tbody>${rows.map((r) => `<tr>
 <td>${esc(r.name)}</td><td class="num">${r.headcount}</td>
 <td><b>${esc(r.dish_type)}:</b> ${esc(r.dish)}</td>
+<td>${Number(r.kids_count) ? `<b>${r.kids_count}</b> (ages ${esc(r.kids_ages)})` : '—'}</td>
 <td><a href="mailto:${esc(r.email)}">${esc(r.email)}</a>${r.phone ? `<br>${esc(r.phone)}` : ''}</td>
 <td>${esc(r.notes || '')}</td><td>${fmt(r.updated_at)}</td>
 <td><form method="post" action="/admin/delete/${r.id}" onsubmit="return confirm('Delete RSVP from ${esc(r.name).replace(/'/g, '')}?')"><button class="link">Delete</button></form></td>
-</tr>`).join('') || '<tr><td colspan="7">No RSVPs yet.</td></tr>'}</tbody></table></div>
+</tr>`).join('') || '<tr><td colspan="8">No RSVPs yet.</td></tr>'}</tbody></table></div>
 </main></body></html>`);
 });
 
 app.get('/admin/export.csv', requireAdmin, async (req, res) => {
   const rows = await store.all();
   const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const head = ['Name', 'Email', 'Phone', 'Headcount', 'Bringing (type)', 'Bringing (dish)', 'Notes', 'Submitted', 'Updated'];
+  const head = ['Name', 'Email', 'Phone', 'Headcount', 'Bringing (type)', 'Bringing (dish)', 'Daycare children', 'Daycare ages', 'Notes', 'Submitted', 'Updated'];
   const csv = [head.map(q).join(',')]
-    .concat(rows.map((r) => [r.name, r.email, r.phone, r.headcount, r.dish_type, r.dish, r.notes, fmt(r.created_at), fmt(r.updated_at)].map(q).join(',')))
+    .concat(rows.map((r) => [r.name, r.email, r.phone, r.headcount, r.dish_type, r.dish, r.kids_count || 0, r.kids_ages, r.notes, fmt(r.created_at), fmt(r.updated_at)].map(q).join(',')))
     .join('\r\n');
   res.set('Content-Type', 'text/csv').set('Content-Disposition', 'attachment; filename="christmas-party-rsvps.csv"').send(csv);
 });
