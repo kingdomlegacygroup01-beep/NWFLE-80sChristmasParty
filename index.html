@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSVP · NWFL Encounters 80s Christmas Party</title>
+<meta name="description" content="RSVP for the Northwest Florida Encounters 80s Christmas Party — Saturday, December 12, 2026 at Liberty Culture Church, Baker, FL.">
+<meta property="og:title" content="RSVP · 80s Christmas Party">
+<meta property="og:description" content="Saturday, Dec 12 · 6:00 PM · Liberty Culture Church Family Life Center, Baker, FL. RSVP by December 7.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,700;0,800;1,800;1,900&family=Yellowtail&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="grid-floor" aria-hidden="true"></div>
+<main class="wrap">
+  <header class="hero">
+    <p class="kicker">Northwest Florida Encounters</p>
+    <h1><span class="eighties">80s</span><span class="script">Christmas Party</span></h1>
+    <p class="when">Saturday, December 12, 2026 <span class="dot">•</span> <span class="cyan">6:00 PM</span></p>
+    <p class="where">Liberty Culture Church · Family Life Center<br>5408 Highway 4 · Baker, Florida 32531</p>
+  </header>
+
+  <section class="layout single">
+    <form id="rsvp" class="card" novalidate>
+      <h2>RSVP <span class="deadline">by December 7</span></h2>
+      <p class="sub">Meat is provided — please bring a side dish or dessert. Dirty Santa gift exchange: $20 max per person.</p>
+
+      <label>Your name <input name="name" autocomplete="name" required maxlength="100"></label>
+      <div class="row">
+        <label>Email <input name="email" type="email" autocomplete="email" required maxlength="200"></label>
+        <label>Phone <span class="opt">(optional)</span> <input name="phone" type="tel" autocomplete="tel" maxlength="30"></label>
+      </div>
+
+      <label>How many in your party, including you?
+        <div class="stepper">
+          <button type="button" data-step="-1" aria-label="Fewer">−</button>
+          <input name="headcount" type="number" min="1" max="30" value="1" inputmode="numeric" required>
+          <button type="button" data-step="1" aria-label="More">+</button>
+        </div>
+      </label>
+
+      <fieldset>
+        <legend>What are you bringing?</legend>
+        <div class="choices">
+          <label class="chip"><input type="radio" name="dish_type" value="Side dish" required><span>Side dish</span></label>
+          <label class="chip"><input type="radio" name="dish_type" value="Dessert"><span>Dessert</span></label>
+          <label class="chip"><input type="radio" name="dish_type" value="Both"><span>Both</span></label>
+        </div>
+      </fieldset>
+      <label>Tell us the dish <input name="dish" required maxlength="200" placeholder="e.g. Mac &amp; cheese, banana pudding"></label>
+
+      <label>Anything else we should know? <span class="opt">(optional)</span>
+        <textarea name="notes" rows="2" maxlength="500"></textarea></label>
+
+      <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <div id="errors" class="errors" role="alert" hidden></div>
+      <button class="btn" type="submit">Send my RSVP</button>
+      <p class="fine">Need to change your RSVP? Just submit again with the same email and we'll update it.</p>
+    </form>
+
+    <div id="thanks" class="card thanks" hidden>
+      <h2 class="neon-pink">You're on the list!</h2>
+      <p id="thanks-msg"></p>
+      <p>See you December 12 at 6:00 PM. Don't forget your Dirty Santa gift ($20 max).</p>
+      <button class="btn ghost" type="button" id="again">Submit another RSVP</button>
+    </div>
+  </section>
+
+  <footer class="questions">
+    Questions? Email <a id="qmail" href="mailto:info.nwfle@gmail.com">info.nwfle@gmail.com</a>
+  </footer>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>

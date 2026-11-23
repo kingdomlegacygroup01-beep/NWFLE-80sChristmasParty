@@ -1,0 +1,16 @@
+{
+  "name": "nwfle-christmas-rsvp",
+  "version": "1.0.0",
+  "description": "RSVP site for the Northwest Florida Encounters 80s Christmas Party",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  }
+}
